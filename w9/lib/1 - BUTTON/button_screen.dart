@@ -7,11 +7,11 @@ class ButtonStatus {
   final bool selected;
   ButtonStatus({required this.name, required this.selected});
 }
+final url = Uri.parse(
+  "https://nora-database-default-rtdb.asia-southeast1.firebasedatabase.app/users.json",
+);
 
 Future<ButtonStatus> fetchButtonStatus() async {
-  final url = Uri.parse(
-    "https://nora-database-default-rtdb.asia-southeast1.firebasedatabase.app/users.json",
-  );
 
   final response = await http.get(url);
 
@@ -22,6 +22,19 @@ Future<ButtonStatus> fetchButtonStatus() async {
   final json = jsonDecode(response.body);
 
   return ButtonStatus(name: json["name"], selected: json["selected"]);
+}
+
+Future<void> updateStatus(bool newStatus) async {
+
+  final response = await http.patch(
+    url,
+    headers: {"Content-Type": "Application/json"},
+    body: jsonEncode({"selected": newStatus}),
+  );
+
+  if (response.statusCode != 200) {
+    throw Exception("failed to update the button status");
+  }
 }
 
 class ButtonScreen extends StatefulWidget {
@@ -73,11 +86,16 @@ class _ButtonScreenState extends State<ButtonScreen> {
     return Scaffold(
       body: Center(
         child: ElevatedButton(
-          onPressed: () => setState(() => selected =! selected),
+          onPressed: () async {
+            setState(() {
+              selected = !selected;
+            });
+            await updateStatus(selected);
+          },
           style: ElevatedButton.styleFrom(
-            backgroundColor: selected ? Colors.blue : Colors.white
+            backgroundColor: selected ? Colors.blue : Colors.white,
           ),
-          child: Text(name?? ""),
+          child: Text(name ?? ""),
         ),
       ),
     );
